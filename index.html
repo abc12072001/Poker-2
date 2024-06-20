@@ -129,35 +129,6 @@
             });
         };
 
-        function JS_CanvasResize() {
-            var desireWidth = window.innerWidth;
-            var desireHeight = window.innerHeight;
-            if (desireWidth < desireHeight) {
-                return;
-            }
-
-            if (isMobile) {
-                canvas.style.position = "absolute";
-                canvas.style.top = "0%";
-                canvas.style.left = "0%";
-            }
-            else {
-                desireWidth = window.innerWidth - 8;
-                desireHeight = window.innerHeight - 8;
-            }
-            canvas.style.width = desireWidth.toString() + "px";
-            canvas.style.height = desireHeight.toString() + "px";
-
-            if (desireHeight / desireWidth >= 0.565) {
-                desireHeight = Math.ceil(1334 / desireWidth * desireHeight);
-                desireWidth = 1334;
-            }
-            else {
-                desireWidth = Math.ceil(750 / desireHeight * desireWidth);
-                desireHeight = 740;
-            }
-        }
-
         window.onload = function () {
             JS_CanvasResize();
             JS_CanvasResize();
@@ -168,6 +139,7 @@
         }
 
         G_UnityInstance = null;
+        startUnity();
         function startUnity() {
             var script = document.createElement("script");
             script.src = loaderUrl;
@@ -177,8 +149,6 @@
                 }).then((unityInstance) => {
                     G_UnityInstance = unityInstance;
                     loadingBar.style.display = "none";
-                    GetSupportedAPIs();
-                    fetchAndSendUserProfile();
                 }).catch((message) => {
                     // alert(message); // facebook 不允许alert
                     console.error("Creating Unity Instance Failed: ", message);
@@ -187,116 +157,7 @@
             document.body.appendChild(script);
         }
 
-        // 启动 facebook初始化
-        console.log("=====> FBInstant.initializeAsync");
-        FBInstant.initializeAsync()
-            .then(function () {
-                console.info("=====> FBInstant.startGameAsync");
-                // 告诉Facebook加载完毕，可以进入游戏了
-                // 也可以在这里加载Unity游戏代码和资源，然后再加载完后再进入游戏
-                FBInstant.startGameAsync().then(function () {
-                    console.info("=====> screen size: " + `${screen.width} x ${screen.height}`);
-                    console.info("=====> window size: " + `${window.innerWidth} x ${window.innerHeight}`)
-
-                    // 开始加载Unity游戏代码和资源
-                    startUnity();
-                });
-            });
-
-        function IAP_Init() {
-            FBInstant.payments.getCatalogAsync().then(function (catalog) {
-                catalog.forEach(function (product) {
-                    console.log("GetProductList ", JSON.stringify(product));
-                    G_UnityInstance.SendMessage('FBInstantIAPPurchaser', 'ProductList', JSON.stringify(product));
-                })
-            });
-        }
-
-        function GetSupportedAPIs() {
-            if (FBInstant.getSupportedAPIs().includes('payments.getCatalogAsync') && FBInstant.getSupportedAPIs().includes('payments.purchaseAsync')) {
-                FBInstant.payments.onReady(function () {
-                    FBInstant.payments.getCatalogAsync()//fetch all products
-                        .then(function (catalog) {
-                            //console.log("FI_PurchaseInit API available");
-                            //G_UnityInstance.SendMessage('AppsFlyerTrackerCallbacks', 'OnFBIGIAPAvailable', 'true');
-                            catalog.forEach(function (product) {
-                                //console.log("GetProductList", JSON.stringify(product));
-                                G_UnityInstance.SendMessage('FBInstantIAPPurchaser', 'ProductList', JSON.stringify(product));
-                            })
-                        });
-
-                    //get unconsumed purchases
-                    FBInstant.payments.getPurchasesAsync().then(function (purchases) {
-                        //console.log("GetPurchaseList");
-                        purchases.forEach(function (purchase) {
-                            G_UnityInstance.SendMessage('FBInstantIAPPurchaser', 'OnFBIGPurchase', JSON.stringify(purchase));
-                        })
-                    });
-                });
-            }
-        }
-
-        function FI_Consume(purchaseToken) {
-            FBInstant.payments.consumePurchaseAsync(purchaseToken).then(function () {
-                console.log("consumed", purchaseToken);
-            }).catch(function (error) { console.log("consume failed", purchaseToken, error.message); });
-        }
-
-        function handlePurchase(productID) {
-            console.log("function handlePurchase(productID) {  " + productID);
-            FBInstant.payments.purchaseAsync({
-                productID: productID,
-                developerPayload: 'foobar',
-            }).then(function (purchase) {
-                var purchaseResult = {
-                    productID: purchase.productID,
-                    purchaseToken: purchase.purchaseToken,
-                    developerPayload: purchase.developerPayload,
-                    purchaseTime: purchase.purchaseTime
-                };
-                console.log("Purchase Result: ", JSON.stringify(purchaseResult));
-
-                if (G_UnityInstance !== null) {
-                    G_UnityInstance.SendMessage('FBInstantIAPPurchaser', 'OnPurchaseComplete', JSON.stringify(purchaseResult));
-                } else {
-                    console.error("G_UnityInstance is not initialized");
-                }
-            }).catch(function (error) {
-                console.error("Purchase failed: ", error);
-
-                var errorResult = {
-                    errorMessage: error.message,
-                    errorCode: error.code
-                };
-
-                if (G_UnityInstance !== null) {
-                    G_UnityInstance.SendMessage('FBInstantIAPPurchaser', 'OnPurchaseFailed', JSON.stringify(errorResult));
-                } else {
-                    console.error("G_UnityInstance is not initialized");
-                }
-            });
-        }
-        function fetchAndSendUserProfile() {
-            const player = FBInstant.player;
-
-            const userID = player.getID();
-            const userName = player.getName();
-            const userPicUrl = player.getPhoto();
-
-            const userProfile = {
-                id: userID,
-                name: userName,
-                picture: userPicUrl
-            };
-
-            console.log("User Profile: ", JSON.stringify(userProfile));
-
-            if (G_UnityInstance !== null) {
-                G_UnityInstance.SendMessage('FBInstantIAPPurchaser', 'ReceiveUserProfile', JSON.stringify(userProfile));
-            } else {
-                console.error("G_UnityInstance is not initialized");
-            }
-        }
+        
     </script>
 </body>
 </html>
