@@ -129,8 +129,6 @@
             });
         };
 
-    
-
         G_UnityInstance = null;
         startUnity();
         function startUnity() {
@@ -142,6 +140,8 @@
                 }).then((unityInstance) => {
                     G_UnityInstance = unityInstance;
                     loadingBar.style.display = "none";
+                    console.log("Unity Instance Created");
+                    
                 }).catch((message) => {
                     // alert(message); // facebook 不允许alert
                     console.error("Creating Unity Instance Failed: ", message);
@@ -149,7 +149,6 @@
             };
             document.body.appendChild(script);
         }
-
         
     </script>
 </body>
