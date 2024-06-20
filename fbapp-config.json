@@ -1,0 +1,12 @@
+{
+  "instant_games": {
+    "platform_version": "RICH_GAMEPLAY",
+    "navigation_menu_version": "NAV_BAR"
+  },
+  "orientation": "LANDSCAPE",
+  "loading": {
+    "background_color": "#FFFFFF",
+    "progress_bar_color": "#0000FF",
+    "progress_bar_height": 4
+  }
+}
